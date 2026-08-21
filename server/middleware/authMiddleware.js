@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const { JWT_SECRET } = require('./jwtUtils');
+const { getJwtSecret } = require('./jwtUtils');
 const User = require('../models/User');
 
 // In-memory user map fallback for resilient operation
@@ -14,7 +14,7 @@ async function protect(req, res, next) {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     let user = null;
 
