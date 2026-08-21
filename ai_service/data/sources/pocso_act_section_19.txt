@@ -1,0 +1,6 @@
+Act: Protection of Children from Sexual Offences Act, 2012
+Section: Section 19
+Summary: Duty to report an offence or likely offence under the Act
+Category: child_protection
+
+A person, including a child, who has knowledge that an offence under the Act has been committed or apprehension that such an offence is likely to be committed must provide the information to the Special Juvenile Police Unit or the local police. The report must be recorded in the manner prescribed by the Act. When information is given by a child, it must be recorded in simple language that the child can understand. A person who gives information in good faith does not incur civil or criminal liability merely for making the report.

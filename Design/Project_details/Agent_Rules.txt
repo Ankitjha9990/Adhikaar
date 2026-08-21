@@ -1,0 +1,242 @@
+================================================================================
+AI CODING AGENT RULES
+Civic and Legal Empowerment Prototype — OOSC 4.0 Hackathon
+For use with: Antigravity, Codex, or any AI coding assistant working on
+this codebase (MERN + Python)
+================================================================================
+
+Purpose: these rules exist to keep the codebase clean, debuggable, and fast
+to iterate on under a tight hackathon deadline. Follow them for every file
+touched, every feature added, and every fix applied — not just on request.
+
+--------------------------------------------------------------------------------
+1. CODE STRUCTURE AND FORMATTING
+--------------------------------------------------------------------------------
+
+  1.1 Never write multi-property inline styles or long chained statements
+      on a single line. Each CSS property, each object key, each function
+      argument (when there are more than 2-3) goes on its own line.
+      Bad:  style={{ display:"flex", padding:"10px", margin:"5px", color:"red" }}
+      Good: style={{
+              display: "flex",
+              padding: "10px",
+              margin: "5px",
+              color: "red",
+            }}
+
+  1.2 Follow consistent naming conventions across the whole codebase:
+      camelCase for JS/TS variables and functions, PascalCase for React
+      components, snake_case for Python. Do not mix conventions within
+      the same language.
+
+  1.3 Keep functions short and single-purpose. If a function is doing
+      more than one clear thing (e.g. "validate input AND call API AND
+      format response"), split it into named sub-functions.
+
+  1.4 Keep consistent file/folder structure. Do not invent a new folder
+      pattern per feature. Match whatever structure already exists in
+      the repo (e.g. /routes, /controllers, /models on the Node side;
+      /services, /schemas, /utils on the Python side). If no structure
+      exists yet, establish one on the first file and stick to it for
+      every file after.
+
+  1.5 No dead code. Do not leave commented-out old implementations,
+      unused imports, unused variables, or placeholder functions that
+      are never called. Delete them.
+
+  1.6 Match existing formatting/linting rules (Prettier/ESLint on the
+      JS side, Black/PEP8 on the Python side) if config files exist in
+      the repo. If they don't exist, don't invent inconsistent styles
+      file-to-file — pick one style and apply it everywhere.
+
+--------------------------------------------------------------------------------
+2. COMMENTING RULES
+--------------------------------------------------------------------------------
+
+  2.1 Do not add a comment above every line or every block by default.
+      Code should be readable from naming and structure first.
+
+  2.2 Only comment when:
+        - The logic is non-obvious (e.g. a regex, a specific legal-text
+          parsing rule, a workaround for a library quirk).
+        - There's a business-logic reason behind a decision that isn't
+          visible from the code itself (e.g. "using keyword routing
+          instead of an LLM classifier here for latency + reliability
+          during live demo").
+        - A known limitation or TODO exists that a teammate needs to see
+          (e.g. "// TODO: department lookup only covers 5 categories for
+          demo scope").
+
+  2.3 Do not restate what the code already says.
+      Bad:  // increment count by 1
+            count += 1
+      Good: (no comment needed — the code is self-explanatory)
+
+  2.4 No commented-out code left in the file "just in case." Remove it;
+      version control already has the history.
+
+--------------------------------------------------------------------------------
+3. FILE ACCESS / CONTEXT DISCIPLINE
+--------------------------------------------------------------------------------
+
+  3.1 Do not read the entire codebase before making a change. Identify
+      the specific file(s) directly relevant to the requested feature or
+      fix, and read only those (plus their immediate dependencies, e.g.
+      a controller and the model/schema it uses).
+
+  3.2 Before editing a shared/common file (e.g. a shared utils file, a
+      shared schema, an environment config), check what else currently
+      depends on it, so the change doesn't silently break an unrelated
+      feature.
+
+  3.3 When a bug is reported, trace it from the symptom (error message,
+      broken UI element, wrong output) to the specific file/function
+      responsible, instead of scanning unrelated files hoping to spot
+      the issue.
+
+  3.4 Do not re-generate or rewrite a whole file when only a small part
+      of it needs to change. Make targeted edits.
+
+  3.5 Do not touch generated/build folders, node_modules, or vendor
+      directories.
+
+--------------------------------------------------------------------------------
+4. SCOPE DISCIPLINE (CRITICAL FOR A TIME-BOXED HACKATHON)
+--------------------------------------------------------------------------------
+
+  4.1 Build exactly what was asked. Do not silently add extra features,
+      extra endpoints, extra config options, or "nice to have" additions
+      that weren't requested — they cost time and add surface area for
+      bugs, none of which is budgeted for.
+
+  4.2 Do not introduce a new library/dependency/framework for something
+      that can be done with what's already in the stack, unless
+      explicitly asked to. Every new dependency is a new thing that can
+      break, and a new thing to explain in the demo/README.
+
+  4.3 If a request is ambiguous, make the smallest reasonable assumption,
+      state it clearly, and proceed — do not stall waiting for
+      clarification on a minor detail when a sensible default exists.
+
+  4.4 Do not refactor unrelated code while implementing a feature, unless
+      the refactor is required to safely make the change. Flag
+      "this could be cleaner, refactor separately later" instead of
+      doing it inline.
+
+--------------------------------------------------------------------------------
+5. RULES FOR FASTER DEVELOPMENT WITH LESS DEBUGGING
+--------------------------------------------------------------------------------
+
+  5.1 Validate inputs at the boundary. Every API endpoint (Express and
+      FastAPI) must validate the incoming request shape before doing
+      anything else, and return a clear 4xx error for bad input — never
+      let a malformed request silently propagate deep into the logic
+      and fail somewhere confusing.
+
+  5.2 Fail loudly and specifically. Error messages must say what went
+      wrong and where (e.g. "RTI generation failed: no department match
+      found for query" — not a bare 500 or a generic "Something went
+      wrong"). This matters doubly for a live-demo project where the
+      team needs to debug fast under pressure.
+
+  5.3 Wrap every external call (LLM API, MongoDB query, internal
+      Express<->Python call) in proper try/catch (or try/except) with a
+      specific, logged error — never let an unhandled promise
+      rejection or unhandled exception crash the service.
+
+  5.4 Keep environment variables in a single .env file per service, with
+      a matching .env.example checked into the repo showing what's
+      required, so any teammate (or a fresh AI agent session) can spin
+      the project up without guessing what keys are needed.
+
+  5.5 After implementing any endpoint, test it directly (curl/Postman/
+      simple script) before wiring it into the UI. Never debug backend
+      logic through the frontend — it multiplies the number of places
+      something could be going wrong.
+
+  5.6 One feature branch or clearly separated change at a time. Do not
+      mix unrelated changes (e.g. a styling tweak and a new endpoint) in
+      the same edit pass — it makes it harder to isolate what broke
+      something if a bug appears afterward.
+
+  5.7 Never invent an API response shape or a data field that doesn't
+      actually exist yet on the other side (frontend assuming a backend
+      field that hasn't been implemented, or vice versa). Confirm the
+      actual contract (see TRD Section 9) before building against it.
+
+  5.8 When integrating the LLM output, always parse/validate the
+      structure before using it (e.g. check that `citations` is really
+      an array before rendering it) — LLM outputs are not guaranteed to
+      match the requested format every time, and an unguarded assumption
+      here is one of the most common sources of last-minute demo crashes.
+
+  5.9 Do not hardcode values that are clearly meant to be config (API
+      URLs, department names, act names) directly inside logic — put
+      them in a config file or the database, per the TRD's data model.
+      Hardcoding them is faster in the moment but causes silent bugs
+      when one copy is updated and another isn't.
+
+  5.10 Keep the vector store index build step separate and re-runnable
+       (a standalone script), not something that happens implicitly
+       inside the API service on every request or every restart — this
+       avoids slow startup times and avoids accidentally re-indexing
+       with stale or partial data mid-demo.
+
+  5.11 Log the retrieved context alongside every RAG response during
+       development (can be disabled/reduced for the final build). This
+       is the fastest way to catch a hallucinated citation before a
+       judge does, and costs almost nothing to add.
+
+  5.12 Before marking any feature "done," test it with at least 3
+       different phrasings of a similar query, not just the one exact
+       demo script. A feature that only works for one specific input
+       string is not actually working — it's a scripted illusion, and
+       it will fail the moment a judge rephrases the question live.
+
+  5.13 Keep a running note (e.g. a NOTES.md or KNOWN_ISSUES.md file) of
+       anything explicitly deferred, skipped, or simplified due to time
+       constraints, so nothing gets forgotten and so the README's
+       "known limitations" section (per TRD Section 7, NFR7) can be
+       written accurately at the end rather than reconstructed from
+       memory under deadline pressure.
+
+  5.14 Do not silently swallow errors to "make the demo look clean."
+       If something fails, show a clear, controlled error state in the
+       UI (e.g. "Couldn't generate a response for this query — try
+       rephrasing") rather than a blank screen, a frozen button, or a
+       fabricated-looking fallback response.
+
+--------------------------------------------------------------------------------
+6. GIT / VERSION CONTROL DISCIPLINE
+--------------------------------------------------------------------------------
+
+  6.1 Commit in small, logical units with clear messages describing
+      what changed and why (e.g. "Add department lookup validation" —
+      not "fix stuff" or "updates").
+
+  6.2 Never commit secrets, API keys, or .env files. Only .env.example
+      (with placeholder values) is committed.
+
+  6.3 Never commit the vector store's built index binaries if it's
+      regenerated via a setup script (per TRD Section 10) — commit the
+      script and the source data files instead.
+
+
+--------------------------------------------------------------------------------
+7. WHEN UNSURE
+--------------------------------------------------------------------------------
+
+  7.1 If a requested change conflicts with an existing architectural
+      decision documented in the PRD or TRD, flag the conflict clearly
+      instead of silently overriding the existing design.
+
+  7.2 If a task is large enough that it risks touching many files at
+      once, break it into a short ordered plan first, then execute step
+      by step — rather than making sweeping simultaneous edits across
+      the codebase that are hard to review or roll back individually.
+
+  7.3 before importing anything please try to install it to double check it that it is installed or not
+
+================================================================================
+END OF DOCUMENT
+================================================================================

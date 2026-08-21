@@ -1,0 +1,6 @@
+Act: RTI Act, 2005
+Section: Section 6
+Summary: Request procedure for obtaining information from a Public Information Officer (PIO)
+Category: rti
+
+A person who desires to obtain any information under this Act shall make a request in writing or through electronic means in English or Hindi or in the official language of the area in which the application is being made, accompanying such fee as may be prescribed, to the Central Public Information Officer or State Public Information Officer, as the case may be, of the concerned public authority, specifying the particulars of the information sought by him or her. An applicant making request for information shall not be required to give any reason for requesting the information or any other personal details except those that may be necessary for contacting him.

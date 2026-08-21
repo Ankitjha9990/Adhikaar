@@ -1,0 +1,6 @@
+Act: Information Technology Act, 2000
+Section: Section 66E & Section 67
+Summary: Protection against digital harassment, cyber stalking, unauthorized message publishing, and electronic privacy violations
+Category: harassment
+
+Under the Information Technology Act, 2000, sending threatening, obscene, or harassing electronic messages, unauthorized publication of private images, or cyber stalking via messaging applications, social media, or email is a punishable offence. Aggrieved individuals have the right to report digital harassment to the National Cyber Crime Reporting Portal (cybercrime.gov.in / Helpline 1930) or the local Police Cyber Crime Cell, preserve digital screenshots and IP header logs, and request platform content takedown.

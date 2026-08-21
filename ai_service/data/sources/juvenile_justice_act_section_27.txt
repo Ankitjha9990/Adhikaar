@@ -1,0 +1,6 @@
+Act: Juvenile Justice (Care and Protection of Children) Act, 2015
+Section: Section 27
+Summary: Constitution of the Child Welfare Committee for children in need of care and protection
+Category: child_welfare
+
+The State Government must constitute one or more Child Welfare Committees for every district for exercising powers and discharging functions relating to children in need of care and protection under the Act. The Committee is the statutory body responsible for dealing with such cases in accordance with the Act, including matters concerning care, protection, rehabilitation and restoration of eligible children.

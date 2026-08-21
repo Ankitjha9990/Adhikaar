@@ -1,0 +1,6 @@
+Act: Indian Succession Act, 1925
+Section: Section 63
+Summary: Formal requirements for execution of an unprivileged will
+Category: inheritance
+
+A person making an unprivileged will must sign or affix a mark to it, or have it signed by another person in the testator's presence and by the testator's direction. The signature or mark must be placed so that it appears intended to give effect to the document as a will. The will must also be attested by two or more witnesses, each of whom has seen the testator sign or affix the mark, or has received a personal acknowledgement of that signature or mark, and each witness must sign the will in the testator's presence.

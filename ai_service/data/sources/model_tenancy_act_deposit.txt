@@ -1,0 +1,6 @@
+Act: Model Tenancy Act, 2021
+Section: Section 10
+Summary: Security deposit requirements and return timelines for residential tenancy
+Category: tenant
+
+The security deposit to be paid by the tenant in advance shall not exceed two months' rent in case of residential premises, and six months' rent in case of non-residential premises. The security deposit shall be refunded to the tenant on the date of taking over vacant possession of the premises from the tenant, after making necessary deductions, if any, towards arrears of rent and utility charges or damage caused to the premises by the tenant.

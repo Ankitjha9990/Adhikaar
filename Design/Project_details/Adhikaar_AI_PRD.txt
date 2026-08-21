@@ -1,0 +1,353 @@
+================================================================================
+PRODUCT REQUIREMENTS DOCUMENT (PRD)
+AI for Civic and Legal Empowerment — OOSC 4.0 Hackathon Prototype
+================================================================================
+
+Document owner : [Your Name / Team Name]
+Hackathon      : OOSC 4.0 Hackathon, IIIT Allahabad
+Track          : Problem Statement 3 — AI for Civic and Legal Empowerment
+Submission     : Phase 1 - Online Prototype (Deadline: 23 Aug 2026, 4:00 PM IST)
+Version        : 1.0
+Status         : Draft for build
+
+--------------------------------------------------------------------------------
+1. PROBLEM STATEMENT
+--------------------------------------------------------------------------------
+Citizens in India frequently have legitimate rights and entitlements — the
+right to information (RTI), tenant protections, consumer protections, and
+workplace rights — that go unused. This is not because the rights don't
+exist, but because:
+
+  - Legal and bureaucratic language is dense, intimidating, and inaccessible
+    to a non-lawyer.
+  - Relevant information is scattered across acts, PDFs, government portals,
+    and notices that are not written to solve one person's specific problem.
+  - Even when a citizen knows they have a right, they don't know:
+      (a) which law/section applies to their situation,
+      (b) which authority/department to approach, and
+      (c) how to phrase and format a formal request correctly.
+  - The friction of drafting a correctly formatted application (e.g. an RTI)
+    or understanding dispute-resolution steps (e.g. a tenant deposit dispute)
+    causes most people to simply give up.
+
+The result: a large gap between "rights that exist on paper" and "rights
+that are actually exercised."
+
+--------------------------------------------------------------------------------
+2. SOLUTION OVERVIEW
+--------------------------------------------------------------------------------
+We are building a focused, two-feature AI web application that converts a
+citizen's plain-language problem into two concrete forms of help:
+
+  1. RTI Drafting Agent
+     Converts a plain-language question ("I want to know why my road hasn't
+     been repaired in 6 months") into a properly formatted, submission-ready
+     RTI application addressed to the correct public authority/department,
+     citing the relevant provisions of the RTI Act, 2005.
+
+  2. Rights Navigator
+     Takes a plain-language description of a tenant, consumer, or workplace
+     dispute ("my landlord is refusing to return my security deposit") and
+     explains, in simple language, what legal rights apply and what concrete
+     steps the person can take — grounded in the relevant law, not generic
+     LLM guesswork.
+
+Both features share one core design principle for credibility: answers are
+grounded in real source text (the RTI Act / relevant tenant-rights statute)
+via retrieval, and every explanation is tied back to a citable section,
+rather than being an unconstrained LLM free-text answer. This directly
+addresses the biggest risk in this problem category: confidently wrong
+legal information.
+
+Scope note: This prototype intentionally excludes Scheme Eligibility Reader
+and Conversational Form-Filler (also listed as illustrative directions in
+the problem statement) to keep the build achievable within the ~4-5 day
+hackathon window. Depth on two features beats shallow coverage of four.
+
+--------------------------------------------------------------------------------
+3. TARGET USER
+--------------------------------------------------------------------------------
+  - A citizen (any literacy/legal background) who has a grievance against a
+    government department, landlord, seller/service provider, or employer,
+    and does not know the correct legal process or wording to act on it.
+  - Primary demo persona: an urban/semi-urban Indian citizen navigating a
+    tenant deposit dispute or seeking government information via RTI.
+  - Language: English + Hindi (Hindi as a stretch goal, not committed scope
+    unless time allows after core flow is stable).
+
+--------------------------------------------------------------------------------
+4. GOALS AND SUCCESS METRICS (for the hackathon demo)
+--------------------------------------------------------------------------------
+Primary goal: a judge can input a real-world plain-language scenario live,
+on stage, and get a correct, well-formatted, source-grounded output within
+seconds — with no crashes, no hallucinated law citations, and no dead ends.
+
+Demo success criteria:
+  - RTI flow: user query -> generated RTI application (correct format,
+    correct department field, cites RTI Act provisions) -> downloadable
+    as PDF/text, in under 15 seconds.
+  - Rights Navigator flow: user query -> plain-language explanation of
+    rights + numbered actionable next steps -> citation to the specific
+    law/section, in under 15 seconds.
+  - Zero fabricated legal citations in the demo path (tested repeatedly
+    before submission).
+  - Judges can change the input mid-demo and still get a sensible, distinct
+    output (proves it's not a hardcoded/scripted response).
+
+Non-goals for this prototype:
+  - Not a substitute for professional legal advice (explicitly disclaimed
+    in the UI).
+  - Not covering every Indian state's tenant law — pick ONE state/act to
+    ground Rights Navigator in for the prototype (e.g. Model Tenancy Act,
+    2021, plus consumer protection basics under Consumer Protection Act,
+    2019) and be transparent about that scope in the UI and README.
+  - Not building user accounts, payment, or admin dashboards.
+
+--------------------------------------------------------------------------------
+5. FEATURES — DETAILED REQUIREMENTS
+--------------------------------------------------------------------------------
+
+5.1 FEATURE 1: RTI DRAFTING AGENT
+----------------------------------
+User story:
+  "As a citizen, I want to describe my information request in plain
+  language and receive a properly formatted RTI application addressed to
+  the right department, so that I don't need to understand legal drafting
+  or bureaucratic structure myself."
+
+Inputs:
+  - Free-text plain-language question/grievance (required)
+  - State/region (optional dropdown, to help route to correct authority)
+  - User's name, address, contact (form fields, required for the final doc)
+
+Processing pipeline:
+  1. Parse the plain-language input to extract: subject matter, likely
+     government department/ministry, and specific information being sought.
+  2. Retrieve relevant RTI Act, 2005 provisions (e.g. Section 6 — request
+     procedure, Section 7 — response timelines, fee provisions) from a
+     local knowledge base (not live web scraping — pre-indexed for speed
+     and reliability during the demo).
+  3. Map the subject matter to a public authority using a small curated
+     lookup table (e.g. "road repair" -> Municipal Corporation / PWD;
+     "ration card" -> Food & Civil Supplies Dept). This lookup table is
+     intentionally hand-curated and limited in scope for the prototype —
+     documented clearly as a known limitation, not hidden.
+  4. Generate the RTI application using a fixed, correctly formatted
+     template (To: [Public Information Officer, Department], Subject,
+     Body citing Section 6(1), applicant details, date).
+  5. Render as downloadable PDF (or plain text if time-constrained) and
+     display for review before download.
+
+Output requirements:
+  - Correctly structured RTI application text (matches real-world RTI
+     format conventions).
+  - Visible citation of the RTI Act section(s) used.
+  - A clear, non-hidden note: "Please verify the department address before
+    submission. This is a drafting aid, not a legal filing service."
+
+Explicitly out of scope for this feature (state clearly in README/demo):
+  - Auto-submission of the RTI to any government portal.
+  - Full nationwide department address database (use a small demo dataset
+    covering a handful of common categories, documented as such).
+  - Tracking RTI response status.
+
+
+5.2 FEATURE 2: RIGHTS NAVIGATOR
+---------------------------------
+User story:
+  "As a citizen facing a tenant, consumer, or workplace dispute, I want to
+  describe my situation in plain language and understand what my rights
+  are and what steps to take, so I can act instead of feeling stuck."
+
+Inputs:
+  - Free-text description of the dispute (required)
+  - Dispute category (optional selector: Tenant / Consumer / Workplace —
+    can also be auto-classified from the free text)
+
+Processing pipeline:
+  1. Classify the dispute into one of the three supported categories
+     (tenant / consumer / workplace) using either a lightweight classifier
+     prompt or keyword-based routing (keyword routing is faster to build
+     and more reliable for a live demo — recommended given the timeline).
+  2. Retrieve relevant grounding text from a pre-indexed knowledge base
+     covering ONE clearly scoped legal source per category, e.g.:
+       - Tenant: Model Tenancy Act, 2021 (security deposit, eviction
+         notice period, repair obligations)
+       - Consumer: Consumer Protection Act, 2019 (right to file complaint,
+         consumer forums, timelines)
+       - Workplace: Payment of Wages Act / Industrial Disputes Act basics
+         (scope this down further if time is short — even covering just
+         wage-payment disputes is a legitimate, demoable slice)
+  3. Generate a plain-language explanation with:
+       - What the law says relevant to this specific situation
+       - Numbered, concrete next steps (e.g. "1. Send a written notice to
+         your landlord requesting deposit return within 7 days. 2. If no
+         response, file a complaint with the Rent Authority under Section
+         X...")
+       - Citation of the specific act/section used
+  4. Display disclaimer: "This explains general legal rights based on
+     [Act Name]. It is not a substitute for professional legal advice."
+
+Output requirements:
+  - Plain-language explanation (no legalese repeated verbatim).
+  - Actionable, numbered steps — not just an explanation.
+  - Visible source citation for every substantive claim.
+
+Explicitly out of scope for this feature:
+  - Multi-state legal variation (tenant law varies significantly by state
+    in India — prototype uses ONE reference act and states this clearly).
+  - Predicting case outcomes or providing a legal opinion.
+  - Connecting the user to an actual lawyer or filing on their behalf.
+
+--------------------------------------------------------------------------------
+6. SHARED SYSTEM REQUIREMENT: GROUNDING & ANTI-HALLUCINATION
+--------------------------------------------------------------------------------
+Both features MUST use retrieval-augmented generation against a small,
+pre-indexed, hand-picked set of real legal source documents rather than
+relying purely on an LLM's parametric knowledge. This is the single most
+important non-negotiable requirement in this PRD, because:
+  - The problem statement is legal/civic in nature — factual accuracy is
+    the core value proposition, not a nice-to-have.
+  - Judges are highly likely to test edge cases live; an ungrounded LLM
+    answer that "sounds right" but cites a nonexistent section will be
+    immediately damaging.
+
+Implementation approach (kept simple for the timeline):
+  - Manually collect and clean 2-4 short source documents (RTI Act key
+    sections, Model Tenancy Act key sections, Consumer Protection Act
+    key sections). Do NOT try to ingest full acts — extract only the
+    provisions relevant to the demo scenarios.
+  - Chunk and embed these documents (a simple vector store is sufficient
+    — e.g. FAISS or Chroma running locally in the Python service).
+  - Retrieve top-matching chunks per query and pass them into the LLM
+    prompt as grounding context, instructing the model to cite only from
+    provided context and to state uncertainty if the query falls outside
+    the provided source material.
+
+--------------------------------------------------------------------------------
+7. TECH STACK
+--------------------------------------------------------------------------------
+Frontend:
+  - React (Create React App or Vite) — single-page app, two main flows
+    (RTI Drafting Agent, Rights Navigator) accessible from a simple nav.
+  - Plain CSS or a lightweight component library (avoid heavy design
+    systems given the time budget) — clean over flashy.
+
+Backend (application layer):
+  - Node.js + Express — handles routing, request validation, user-facing
+    API endpoints, and serves the frontend build.
+  - MongoDB — stores: department lookup table, generated document history
+    (optional, for demo continuity), and any static reference data.
+
+AI / Retrieval layer:
+  - Python microservice (FastAPI or Flask), called by the Express backend
+    via internal REST API.
+  - LLM: any available API-based model (e.g. via Anthropic/OpenAI API) for
+    generation — do NOT attempt to self-host a model given the timeline.
+  - Retrieval: a simple vector store (FAISS/Chroma) with pre-embedded
+    source documents (RTI Act excerpts, Model Tenancy Act excerpts,
+    Consumer Protection Act excerpts).
+  - PDF generation: a lightweight library (e.g. reportlab in Python, or
+    a Node PDF library) to render the RTI application as a downloadable
+    document.
+
+Dev/build tools:
+  - Antigravity / Codex (AI coding assistants) used for scaffolding routes,
+    boilerplate CRUD, and repetitive UI components — NOT relied upon for
+    scoping decisions or for the retrieval/grounding logic, which needs
+    careful manual verification.
+
+Deployment (for the "live/hosted" submission requirement):
+  - Frontend: Vercel or Netlify (fast, free, simple).
+  - Backend + Python service: Render or Railway (free tier sufficient
+    for demo traffic).
+  - If hosting proves time-consuming, fall back to clear local-run
+    instructions in the README, as explicitly permitted by the hackathon
+    rules.
+
+--------------------------------------------------------------------------------
+8. SYSTEM ARCHITECTURE (HIGH LEVEL)
+--------------------------------------------------------------------------------
+  [React Frontend]
+        |
+        v
+  [Express API (Node.js)]  <---> [MongoDB: lookup tables, history]
+        |
+        v
+  [Python AI Service (FastAPI)]
+        |
+        v
+  [Vector Store: FAISS/Chroma] <-- pre-indexed legal source excerpts
+        |
+        v
+  [LLM API call for generation, grounded in retrieved context]
+        |
+        v
+  Response returned up the chain -> rendered in UI -> optional PDF export
+
+--------------------------------------------------------------------------------
+9. USER FLOW SUMMARY
+--------------------------------------------------------------------------------
+RTI Drafting Agent:
+  Landing page -> select "RTI Drafting Agent" -> enter plain-language
+  question + basic personal details -> system generates formatted RTI
+  application with citations -> user reviews -> downloads as PDF/text.
+
+Rights Navigator:
+  Landing page -> select "Rights Navigator" -> enter dispute description
+  (optionally select category) -> system classifies + retrieves relevant
+  law -> displays plain-language explanation + numbered next steps with
+  citations -> user can ask a follow-up (stretch goal) or exit.
+
+--------------------------------------------------------------------------------
+10. RISKS AND MITIGATIONS
+--------------------------------------------------------------------------------
+  Risk: LLM hallucinates a legal citation or department name.
+  Mitigation: Strict RAG grounding (Section 6); test the exact demo
+  scenarios repeatedly before submission; instruct model explicitly to
+  say "not covered by available sources" rather than guess.
+
+  Risk: Scope creep — trying to cover too many states/laws/categories.
+  Mitigation: Hard-lock scope to ONE act per category, documented in
+  README as a known/intentional limitation, not hidden.
+
+  Risk: Live demo failure (hosting downtime, API rate limits).
+  Mitigation: Have a local fallback ready; record a backup screen capture
+  of a successful run in case live demo fails during Phase 1 video or
+  finale presentation.
+
+  Risk: Time lost on infrastructure (auth, deployment, styling) instead
+  of core AI logic.
+  Mitigation: No user accounts/auth for the prototype; minimal styling;
+  prioritize the retrieval + generation pipeline first, polish last.
+
+--------------------------------------------------------------------------------
+11. BUILD PRIORITY ORDER (given the compressed timeline)
+--------------------------------------------------------------------------------
+  1. Collect and clean source legal excerpts (RTI Act, Model Tenancy Act,
+     Consumer Protection Act) — do this FIRST, it blocks everything else.
+  2. Build the Python retrieval + generation service and test it via
+     direct API calls (no UI yet) until outputs are reliably accurate.
+  3. Build minimal Express API wrapping the Python service.
+  4. Build minimal React UI for both flows.
+  5. Add PDF export for RTI Drafting Agent.
+  6. Add disclaimers, citations display, and basic styling polish.
+  7. Write README (setup instructions, known limitations, architecture
+     diagram, sample queries that work well for demo).
+  8. Record demo video (screen recording + clear voiceover, under 10
+     minutes as required) using the tested demo scenarios from Section 4.
+  9. Deploy (or finalize local-run instructions) and submit.
+
+--------------------------------------------------------------------------------
+12. SUBMISSION CHECKLIST (per hackathon requirements)
+--------------------------------------------------------------------------------
+  [ ] Prototype link (live/hosted) OR clear local-run instructions in README
+  [ ] GitHub repo with well-documented README
+  [ ] Demo video (mandatory, max 10 minutes) highlighting core features
+  [ ] Both features (RTI Drafting Agent, Rights Navigator) working end-to-end
+  [ ] Known limitations clearly documented (scope of legal sources covered)
+  [ ] No hardcoded/faked demo responses — verified with varied live inputs
+
+================================================================================
+END OF DOCUMENT
+================================================================================

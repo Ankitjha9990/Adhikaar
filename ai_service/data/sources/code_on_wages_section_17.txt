@@ -1,0 +1,8 @@
+Act: Code on Wages, 2019
+Section: Section 17
+Summary: Time limit for payment of wages across wage periods
+Category: workplace
+Status: Current
+Effective From: 2025-11-21
+
+Section 17 of the Code on Wages, 2019 governs the statutory time limit for payment of wages. Where an employee is engaged on a monthly basis, the employer shall pay the wages before the expiry of the seventh day of the succeeding month. Where engaged on a weekly basis, wages shall be paid on the last working day of the week, and for daily wages, at the end of the shift. No employer may withhold or delay wage payments beyond these statutory time limits.

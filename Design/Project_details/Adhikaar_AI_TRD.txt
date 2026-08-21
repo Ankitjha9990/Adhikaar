@@ -1,0 +1,575 @@
+================================================================================
+TECHNICAL REQUIREMENTS DOCUMENT (TRD)
+AI for Civic and Legal Empowerment — OOSC 4.0 Hackathon Prototype
+Features: RTI Drafting Agent + Rights Navigator
+================================================================================
+
+Document owner : [Your Name / Team Name]
+Companion doc  : PRD_Civic_Legal_Empowerment_Prototype.txt
+Version        : 1.0
+Status         : Draft for build
+
+--------------------------------------------------------------------------------
+1. SYSTEM ARCHITECTURE
+--------------------------------------------------------------------------------
+
+1.1 High-level architecture diagram (text form)
+
+  [Client: React SPA]
+         |
+         | HTTPS (JSON over REST)
+         v
+  [Node.js / Express API Layer]  ----->  [MongoDB]
+         |                                  (lookup tables, request logs,
+         | HTTP (internal, JSON)             generated-doc history)
+         v
+  [Python AI Service: FastAPI]
+         |
+         |--> [Vector Store: FAISS/Chroma]  (pre-indexed legal excerpts)
+         |
+         |--> [LLM Provider API]  (generation, grounded via retrieved context)
+         |
+         v
+  [PDF Generator (reportlab)]  --> returns file/base64 to Express --> client
+
+1.2 Component responsibilities
+
+  React Frontend (Client)
+    - Renders two flows: RTI Drafting Agent, Rights Navigator.
+    - Collects user input, calls Express API, renders responses, triggers
+      PDF download.
+    - No direct calls to Python service or LLM provider — always goes
+      through Express (keeps API keys server-side, keeps a single point
+      of request validation/logging).
+
+  Express API Layer (Node.js)
+    - Public-facing REST API consumed by the frontend.
+    - Input validation, request shaping, rate limiting (basic).
+    - Talks to MongoDB for lookup data (department mapping table) and
+      to persist request/response history (optional, for demo replay).
+    - Proxies AI-processing requests to the Python service over an
+      internal HTTP call and returns the result to the client.
+    - Does NOT contain any LLM or retrieval logic itself.
+
+  Python AI Service (FastAPI)
+    - Owns all RAG logic: chunking, embedding, retrieval, prompt
+      construction, LLM invocation, response post-processing.
+    - Owns PDF generation for the RTI Drafting Agent output.
+    - Exposes two internal endpoints (one per feature) consumed only by
+      the Express layer, not directly by the client.
+
+  MongoDB
+    - Stores static/curated data: department lookup table (subject ->
+      public authority mapping), category -> legal-source mapping.
+    - Optionally stores generated request/response pairs for demo
+      continuity and for showing "recent activity" if useful in the UI.
+    - Does NOT store the legal source documents themselves (those live
+      as flat files feeding the vector store, not as DB records).
+
+  Vector Store (FAISS or Chroma, running inside/alongside the Python
+  service)
+    - Holds embeddings of the pre-selected legal excerpts (RTI Act
+      sections, Model Tenancy Act sections, Consumer Protection Act
+      sections).
+    - Queried at request time to retrieve top-k relevant chunks per
+      user query.
+
+  LLM Provider (external API)
+    - Used only for generation, constrained by retrieved context.
+    - Not used for retrieval, not used for storing any state.
+
+--------------------------------------------------------------------------------
+2. USER FLOW
+--------------------------------------------------------------------------------
+
+2.1 RTI Drafting Agent — user flow
+
+  1. User lands on home page, selects "RTI Drafting Agent."
+  2. User enters: plain-language question, optional state/region,
+     applicant name/address/contact.
+  3. Frontend validates required fields client-side, calls
+     POST /api/rti/generate.
+  4. Express validates payload, forwards to Python service
+     POST /internal/rti/generate.
+  5. Python service:
+       a. Extracts subject/intent from the query.
+       b. Looks up likely department via curated mapping table
+          (fetched from MongoDB via Express at request time, or cached
+          in Python service memory at startup — see Section 4).
+       c. Retrieves relevant RTI Act excerpts from vector store.
+       d. Constructs prompt with retrieved context + user details.
+       e. Calls LLM API to generate the formatted application text.
+       f. Generates PDF via reportlab.
+       g. Returns { application_text, citations[], pdf_base64 } to Express.
+  6. Express returns response to client.
+  7. Frontend displays the generated application text with citations
+     highlighted, and a "Download PDF" button (decodes/serves the
+     base64 PDF, or hits a follow-up endpoint to fetch the file).
+  8. User reviews and downloads.
+
+2.2 Rights Navigator — user flow
+
+  1. User lands on home page, selects "Rights Navigator."
+  2. User enters: plain-language dispute description, optional category
+     selector (Tenant / Consumer / Workplace).
+  3. Frontend calls POST /api/rights/analyze.
+  4. Express forwards to Python service POST /internal/rights/analyze.
+  5. Python service:
+       a. Classifies dispute category (keyword-based routing if category
+          not explicitly selected — see Section 6.3).
+       b. Retrieves relevant excerpts from the matching legal source
+          (Model Tenancy Act / Consumer Protection Act / workplace-wage
+          provisions) via the vector store.
+       c. Constructs prompt instructing the LLM to answer ONLY using
+          retrieved context, and to output: plain-language explanation +
+          numbered next steps + citations.
+       d. Calls LLM API, parses structured response.
+       e. Returns { category, explanation, steps[], citations[] } to
+          Express.
+  6. Express returns response to client.
+  7. Frontend renders explanation, numbered steps, and citations, with
+     the disclaimer banner always visible.
+  8. (Stretch goal) User can ask a follow-up question in the same
+     session; if implemented, this appends to conversation context sent
+     to the Python service on the next call.
+
+--------------------------------------------------------------------------------
+3. DATA FLOW
+--------------------------------------------------------------------------------
+
+  Step  Data                                  From        To
+  ----  ------------------------------------  ----------  ----------------
+  1     User free-text + form fields           Client      Express API
+  2     Validated request payload              Express     Python service
+  3     Department/category lookup query       Python      MongoDB (via
+                                                            Express-exposed
+                                                            internal read
+                                                            endpoint, or
+                                                            cached copy)
+  4     Query embedding                        Python      Vector store
+  5     Top-k retrieved text chunks            Vector      Python
+                                                store
+  6     Prompt (query + retrieved context)     Python      LLM Provider API
+  7     Generated text (application /          LLM         Python
+        explanation)                           Provider
+  8     Structured JSON response               Python      Express
+  9     PDF binary (RTI feature only)           Python      Express
+  10    Final JSON (+ optional PDF link/blob)  Express     Client
+  11    Rendered UI + downloadable file         Client      User
+
+  Data at rest:
+    - MongoDB: department lookup table, category-to-source mapping,
+      optional history of past requests/responses (for demo purposes;
+      no sensitive data retention policy needed for a hackathon
+      prototype, but PII fields — name/address — should NOT be logged
+      persistently beyond what's needed to render the current session's
+      PDF, to avoid unnecessary privacy exposure even in a demo).
+    - Vector store: embedded legal excerpts only — static, no user data.
+    - No user accounts, no session persistence beyond a single request
+      lifecycle (unless the follow-up/conversation stretch goal is
+      implemented, in which case conversation context is held in-memory
+      per session, not persisted to DB).
+
+--------------------------------------------------------------------------------
+4. BACKEND CONNECTION: EXPRESS.JS <-> PYTHON COMMUNICATION
+--------------------------------------------------------------------------------
+
+  Mechanism: Internal REST over HTTP (JSON), Python service run as a
+  separate process on a different port, called by Express using a
+  standard HTTP client (e.g. node-fetch or axios).
+
+  Why REST over HTTP instead of alternatives:
+    - Simplest to implement and debug within the time budget.
+    - Both services can be deployed independently (e.g. Express on
+      Render, Python on Render/Railway as a second service).
+    - Avoids the added complexity of message queues or gRPC, which are
+      not justified at this scale/timeline.
+
+  Example internal contract:
+
+    POST http://<python-service-host>:8000/internal/rti/generate
+    Headers: Content-Type: application/json, X-Internal-Key: <shared secret>
+    Body:
+      {
+        "query": "string",
+        "applicant": {
+          "name": "string",
+          "address": "string",
+          "contact": "string"
+        },
+        "region": "string (optional)"
+      }
+    Response 200:
+      {
+        "department": "string",
+        "application_text": "string",
+        "citations": ["RTI Act, 2005 - Section 6(1)", "..."],
+        "pdf_base64": "string"
+      }
+    Response 4xx/5xx:
+      { "error": "string", "detail": "string" }
+
+    POST http://<python-service-host>:8000/internal/rights/analyze
+    Body:
+      {
+        "query": "string",
+        "category": "tenant | consumer | workplace | null"
+      }
+    Response 200:
+      {
+        "category": "string",
+        "explanation": "string",
+        "steps": ["string", "..."],
+        "citations": ["string", "..."]
+      }
+
+  Security for internal calls:
+    - A shared secret header (X-Internal-Key) checked by the Python
+      service so it only accepts calls from the Express layer, not from
+      the public internet directly (Python service should not be
+      publicly exposed at all if avoidable — bind to internal network
+      or at minimum enforce the header check).
+    - Express holds all externally-facing secrets (LLM API key can live
+      in either service, but recommended to keep it in the Python
+      service since that's where it's used, reducing exposure surface).
+
+  Timeout/error handling:
+    - Express sets a reasonable timeout (e.g. 20s) on calls to the
+      Python service, given LLM generation latency.
+    - On timeout/error, Express returns a graceful error to the client
+      ("Something went wrong generating your document, please try
+      again") rather than a raw stack trace.
+
+--------------------------------------------------------------------------------
+5. DEPENDENCIES AND INTEGRATIONS
+--------------------------------------------------------------------------------
+
+5.1 External APIs / third-party services
+
+  - LLM Provider API (e.g. Anthropic API or OpenAI API) — used for
+    generation only, called from the Python service.
+      * Requires: API key (stored as environment variable, never
+        committed to the repo).
+      * Rate limits: check provider's rate limit for the chosen tier;
+        add basic retry-with-backoff for transient failures given this
+        is a live-demo-critical dependency.
+  - Hosting platforms:
+      * Frontend: Vercel or Netlify (static/SPA hosting).
+      * Backend (Express) + Python service: Render or Railway.
+      * MongoDB: MongoDB Atlas (free tier sufficient).
+
+5.2 Backend libraries (Node.js / Express)
+
+  - express — HTTP server/routing
+  - mongoose — MongoDB ODM
+  - axios or node-fetch — internal HTTP calls to Python service
+  - dotenv — environment variable management
+  - cors — cross-origin handling for frontend <-> backend calls
+  - express-validator (or similar) — request payload validation
+  - helmet — basic security headers (low-cost hardening)
+
+5.3 AI/Python service libraries
+
+  - fastapi — API framework for the Python service
+  - uvicorn — ASGI server to run FastAPI
+  - langchain or llama-index (optional convenience layer) OR a direct,
+    hand-rolled retrieval pipeline (recommended if the team is more
+    comfortable with fewer abstractions given the timeline — a manual
+    FAISS + prompt-construction pipeline is very achievable without a
+    framework and is easier to debug under time pressure)
+  - faiss-cpu OR chromadb — vector store
+  - sentence-transformers (e.g. all-MiniLM-L6-v2) for embeddings, OR the
+    embedding endpoint of the chosen LLM provider — pick ONE embedding
+    source and keep it consistent between indexing and query time
+  - anthropic or openai (official SDK matching chosen LLM provider)
+  - reportlab — PDF generation for the RTI application document
+  - pydantic — request/response schema validation (comes with FastAPI)
+  - python-dotenv — environment variable management
+
+5.4 Frontend libraries (React)
+
+  - react, react-dom — core framework
+  - react-router-dom — routing between the two feature flows
+  - axios — API calls to the Express backend
+  - Minimal CSS (plain CSS modules or a lightweight utility approach) —
+    avoid pulling in a heavy component library given the time budget
+
+5.5 Internal systems / data assets the project depends on
+
+  - Curated legal source documents (manually collected, cleaned excerpts
+    of): RTI Act 2005 (key sections), Model Tenancy Act 2021 (key
+    sections), Consumer Protection Act 2019 (key sections), and a small
+    set of workplace-wage provisions. These are static text/markdown
+    files checked into the repo (e.g. /data/sources/), NOT fetched live
+    from the web at runtime — this avoids scraping fragility and keeps
+    the demo reliable and offline-safe.
+  - Department lookup table (subject-category -> public authority
+    mapping) — a small curated JSON/MongoDB collection built by hand for
+    the categories covered in the demo.
+
+--------------------------------------------------------------------------------
+6. RAG IMPLEMENTATION DETAILS
+--------------------------------------------------------------------------------
+
+6.1 Source preparation (one-time, done before/at the start of the build)
+
+  - Manually select and copy the specific sections of each act that are
+    relevant to the demo scenarios (do not ingest full acts — this keeps
+    the index small, fast, and highly relevant, and reduces the chance
+    of retrieving an irrelevant chunk).
+  - Save each source as a separate flat text file with a clear filename
+    (e.g. rti_act_section_6.txt, model_tenancy_act_deposit.txt).
+  - Add a short metadata header to each file (act name, section number,
+    one-line summary) so this can be attached to retrieved chunks and
+    shown as a citation in the UI.
+
+6.2 Indexing pipeline (run once at service startup or as a separate
+    offline script)
+
+  1. Load all files from /data/sources/.
+  2. Chunk each document (simple approach: chunk by section/paragraph
+     boundaries already present in the curated files, since these are
+     short and hand-curated — no need for complex sliding-window
+     chunking at this scale).
+  3. Generate embeddings for each chunk using the chosen embedding model.
+  4. Store embeddings + chunk text + metadata (source file, section
+     label) in the vector store (FAISS index persisted to disk, or
+     Chroma with a local persistent directory).
+  5. On service startup, load the pre-built index rather than
+     re-embedding every time (faster boot, more reliable for demo day).
+
+6.3 Query-time retrieval pipeline
+
+  1. Receive user query (plus, for Rights Navigator, an optional
+     explicit category selection).
+  2. If category is provided (Rights Navigator) or department subject is
+     inferable (RTI Agent), FILTER the vector store search to only the
+     relevant source subset (e.g. only tenant-law chunks for a tenant
+     dispute) — this significantly improves retrieval precision over
+     searching the whole combined index, and is cheap to implement via
+     metadata filtering.
+  3. If category is not provided, run a lightweight keyword-based
+     classifier first (e.g. presence of words like "landlord", "deposit",
+     "rent" -> tenant; "employer", "salary", "wages" -> workplace;
+     "refund", "product", "seller" -> consumer) to pick the source subset
+     before retrieval. This is deliberately simple (not an ML classifier)
+     to keep it fast and debuggable under time pressure.
+  4. Embed the user query using the same embedding model used at
+     indexing time.
+  5. Retrieve top-k (k=3 to 5) most similar chunks via cosine similarity
+     search in the vector store.
+  6. Construct the LLM prompt using a strict template that:
+       - Includes the retrieved chunks verbatim as "context."
+       - Instructs the model explicitly: "Answer only using the provided
+         context. If the context does not contain enough information to
+         answer, say so clearly instead of guessing. Cite the specific
+         section for every claim."
+       - Includes the user's original query.
+       - Specifies the required output structure (see Section 8, API
+         response schemas) so the model returns something parseable.
+  7. Call the LLM API with this constructed prompt.
+  8. Parse the LLM response (structured output requested via prompt
+     instructions, and validated on the Python side before returning to
+     Express — if parsing fails, retry once with a stricter format
+     instruction, then fall back to a graceful error rather than
+     returning malformed data to the client).
+
+6.4 Grounding safeguard (non-negotiable per PRD Section 6)
+
+  - The system prompt for both features must explicitly forbid the model
+    from citing any law/section that does not appear in the retrieved
+    context.
+  - Log (at minimum during development/testing, not necessarily in
+    production) the retrieved chunks alongside the generated response
+    for manual spot-checking before the hackathon submission — this is
+    how you catch hallucination issues before a judge does.
+
+--------------------------------------------------------------------------------
+7. FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------------------
+
+  FR1  User can submit a plain-language RTI query with applicant details
+       and receive a formatted RTI application.
+  FR2  Generated RTI application must include: addressee (department/PIO),
+       subject line, body text citing relevant RTI Act section(s),
+       applicant details, and date.
+  FR3  User can download the generated RTI application as a PDF.
+  FR4  User can submit a plain-language dispute description (tenant,
+       consumer, or workplace) and receive a plain-language rights
+       explanation.
+  FR5  Rights Navigator output must include numbered, actionable next
+       steps, not just an explanation.
+  FR6  Every substantive legal claim in both features' output must be
+       accompanied by a citation to a specific act/section from the
+       pre-indexed source material.
+  FR7  If a query falls outside the scope of the indexed source material,
+       the system must say so explicitly rather than fabricate an answer.
+  FR8  The UI must display a persistent disclaimer that outputs are not a
+       substitute for professional legal advice.
+  FR9  The system must allow a user to submit a new query without
+       reloading the page (single-page flow per feature).
+  FR10 The department lookup for RTI must cover at minimum the demo
+       scenarios prepared for the submission video/live presentation.
+
+--------------------------------------------------------------------------------
+8. NON-FUNCTIONAL REQUIREMENTS
+--------------------------------------------------------------------------------
+
+  NFR1  Response latency: end-to-end response time (client request to
+        rendered output) should be under ~15 seconds for a typical query,
+        to remain demo-friendly. This bounds acceptable LLM
+        prompt/context size and retry logic.
+  NFR2  Reliability for demo day: the two prepared demo scenarios (one
+        per feature) must be tested and verified to work correctly
+        multiple times before submission, including with slightly
+        reworded live-judge inputs.
+  NFR3  Availability: hosted endpoints should remain reachable for the
+        duration of Phase 1 review and the Finale presentation window;
+        a local fallback run must be ready as a backup.
+  NFR4  Security: no API keys or secrets committed to the repository;
+        all secrets loaded via environment variables; internal
+        Express<->Python calls protected by a shared-secret header.
+  NFR5  Privacy: user-submitted PII (name, address, contact used for the
+        RTI application) is used only transiently to render the current
+        response/PDF and is not persisted beyond what's needed for the
+        session, unless explicitly required for a demo history feature
+        (in which case this must be disclosed in the UI).
+  NFR6  Maintainability: RAG source documents and department lookup data
+        are stored as clearly organized, separately editable flat
+        files/collections — not hardcoded inside application logic —
+        so scope (e.g. adding another state's tenancy act) can be
+        extended without code changes.
+  NFR7  Transparency: known scope limitations (which acts/sections are
+        covered, which departments are mapped) must be clearly stated in
+        the README and, ideally, visible in the UI itself.
+  NFR8  Portability: the system must be runnable locally via clear
+        README instructions (as permitted by hackathon rules) in case
+        hosted deployment is unavailable during judging.
+
+--------------------------------------------------------------------------------
+9. DATA MODELS
+--------------------------------------------------------------------------------
+
+9.1 MongoDB collections
+
+  Collection: department_lookup
+    {
+      _id: ObjectId,
+      subject_keywords: [String],     // e.g. ["road", "pothole", "repair"]
+      department_name: String,        // e.g. "Municipal Corporation - PWD"
+      region: String,                 // optional, e.g. "Delhi" or "generic"
+      address_template: String        // placeholder address/format for demo
+    }
+
+  Collection: legal_source_metadata
+    {
+      _id: ObjectId,
+      source_file: String,            // e.g. "model_tenancy_act_deposit.txt"
+      act_name: String,                // e.g. "Model Tenancy Act, 2021"
+      section_label: String,           // e.g. "Section 10 - Security Deposit"
+      category: String,                // "rti" | "tenant" | "consumer" | "workplace"
+      summary: String                  // one-line human-readable summary
+    }
+
+  Collection: request_log (optional, for demo continuity/history view)
+    {
+      _id: ObjectId,
+      feature: String,                 // "rti" | "rights_navigator"
+      query_text: String,
+      category: String,                // for rights navigator
+      response_summary: String,        // short summary, not full PII-bearing doc
+      citations: [String],
+      created_at: Date
+    }
+    Note: applicant PII (name/address/contact) is intentionally NOT
+    stored in request_log to limit unnecessary data retention; it is
+    used only in the transient request/response cycle to render the PDF.
+
+9.2 Vector store record shape (conceptual — implementation-specific,
+    e.g. FAISS index + a parallel metadata store, or Chroma's native
+    metadata support)
+
+  {
+    chunk_id: String,
+    text: String,                     // the actual legal excerpt text
+    embedding: [Float],               // vector representation
+    metadata: {
+      act_name: String,
+      section_label: String,
+      category: String                // "rti" | "tenant" | "consumer" | "workplace"
+    }
+  }
+
+9.3 API-level request/response schemas — see Section 4 (internal
+    contract) for the Express<->Python schemas, and below for the
+    public-facing client<->Express schemas.
+
+  POST /api/rti/generate
+    Request:
+      {
+        "query": "string",
+        "applicant": { "name": "string", "address": "string", "contact": "string" },
+        "region": "string (optional)"
+      }
+    Response 200:
+      {
+        "department": "string",
+        "application_text": "string",
+        "citations": ["string"],
+        "pdf_url": "string"           // or pdf_base64, depending on implementation
+      }
+
+  POST /api/rights/analyze
+    Request:
+      {
+        "query": "string",
+        "category": "tenant | consumer | workplace | null"
+      }
+    Response 200:
+      {
+        "category": "string",
+        "explanation": "string",
+        "steps": ["string"],
+        "citations": ["string"]
+      }
+
+--------------------------------------------------------------------------------
+10. STORAGE SUMMARY
+--------------------------------------------------------------------------------
+
+  - MongoDB Atlas: department_lookup, legal_source_metadata, optional
+    request_log. Small, low-write-volume, free tier is sufficient.
+  - Local/persisted vector index: FAISS index file or Chroma persistent
+    directory, checked into the repo or rebuilt via a setup script at
+    deploy time (rebuilding at deploy time is preferable — keeps the
+    repo lightweight and avoids committing binary index files).
+  - Flat files: /data/sources/ containing the curated legal excerpt text
+    files that feed the indexing pipeline — these ARE checked into the
+    repo, since they're small, human-readable, and are the ground truth
+    the whole system depends on.
+  - No file storage service (e.g. S3) is required for this prototype's
+    scope — generated PDFs can be returned directly in the API response
+    (base64 or a short-lived temp file) rather than persisted long-term.
+
+--------------------------------------------------------------------------------
+11. OPEN QUESTIONS / DECISIONS TO CONFIRM BEFORE BUILD START
+--------------------------------------------------------------------------------
+
+  - Final choice of LLM provider (Anthropic vs OpenAI vs other) — pick
+    based on whichever API key/access the team already has, to avoid
+    losing time on account setup.
+  - Final choice of vector store: FAISS (simpler, fully local, no server)
+    vs Chroma (slightly more features, still simple) — FAISS is
+    recommended by default given the small dataset size and minimal
+    external dependency footprint.
+  - Whether to implement the "follow-up question" stretch goal for
+    Rights Navigator — only attempt after both core flows are fully
+    working and tested, per the build priority order in the PRD.
+  - Whether PDF generation returns a base64 blob in the JSON response
+    (simpler, one round trip) or a separate file-download endpoint
+    (cleaner separation) — base64-in-response is recommended for time
+    savings unless PDF size becomes an issue.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

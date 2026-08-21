@@ -1,0 +1,6 @@
+Act: Maintenance and Welfare of Parents and Senior Citizens Act, 2007
+Section: Section 23
+Summary: Protection of senior citizens where property is transferred subject to care and basic needs
+Category: senior_citizen
+
+Where a senior citizen has transferred property subject to a condition that the transferee will provide basic amenities and basic physical needs to the senior citizen, and the transferee fails to do so, the transfer may be declared void at the option of the senior citizen by the Tribunal. The provision is intended to protect senior citizens who transfer property on the expectation that their basic needs and welfare will be maintained.

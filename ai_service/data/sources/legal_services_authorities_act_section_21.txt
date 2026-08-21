@@ -1,0 +1,6 @@
+Act: Legal Services Authorities Act, 1987
+Section: Section 21
+Summary: Legal effect of a Lok Adalat award
+Category: legal_aid
+
+Every award of a Lok Adalat is treated as a decree of a civil court and is final and binding on all parties to the dispute and on persons claiming under them. No appeal lies to any court against such an award. Where a matter is settled in a Lok Adalat, the award provides a legally enforceable outcome based on the settlement reached by the parties.

@@ -1,0 +1,50 @@
+[
+  {
+    "subject_keywords": ["road", "pothole", "repair", "street", "highway", "footpath"],
+    "department_name": "Municipal Corporation - Public Works Department (PWD)",
+    "region": "generic",
+    "address_template": "Office of the Superintending Engineer, Public Works Department, Municipal Corporation"
+  },
+  {
+    "subject_keywords": ["ration", "ration card", "food", "pds", "grain", "supplies"],
+    "department_name": "Department of Food, Civil Supplies and Consumer Affairs",
+    "region": "generic",
+    "address_template": "Office of the Assistant Commissioner, Food & Civil Supplies Department"
+  },
+  {
+    "subject_keywords": ["water", "severage", "pipeline", "water supply", "drinking water", "drainage"],
+    "department_name": "Delhi Jal Board / State Water Supply and Sewerage Board",
+    "region": "generic",
+    "address_template": "Office of the Executive Engineer, Water Supply & Sewerage Board"
+  },
+  {
+    "subject_keywords": ["electricity", "power", "meter", "billing", "power cut", "transformer"],
+    "department_name": "State Electricity Distribution Company / Power Department",
+    "region": "generic",
+    "address_template": "Office of the Superintending Engineer, State Electricity Distribution Co. Ltd."
+  },
+  {
+    "subject_keywords": ["birth", "death", "certificate", "registration", "vital statistics"],
+    "department_name": "Municipal Corporation - Vital Statistics / Registrar of Births & Deaths",
+    "region": "generic",
+    "address_template": "Office of the Chief Registrar of Births and Deaths, Municipal Health Department"
+  },
+  {
+    "subject_keywords": ["pension", "old age pension", "widow pension", "disability pension", "pf"],
+    "department_name": "Department of Social Welfare / Employees Provident Fund Organisation",
+    "region": "generic",
+    "address_template": "Office of the District Social Welfare Officer / Regional PF Commissioner"
+  },
+  {
+    "subject_keywords": ["school", "admission", "rte", "education", "fees", "teacher"],
+    "department_name": "Department of School Education / District Education Office",
+    "region": "generic",
+    "address_template": "Office of the District Education Officer (DEO), Department of Education"
+  },
+  {
+    "subject_keywords": ["property tax", "house tax", "assessment", "property record", "khata"],
+    "department_name": "Municipal Corporation - Revenue / Property Tax Department",
+    "region": "generic",
+    "address_template": "Office of the Revenue Officer / Assessor & Collector, Property Tax Department"
+  }
+]
