@@ -8,9 +8,9 @@ const DepartmentLookup = require('../models/DepartmentLookup');
 const seedDataPath = path.join(__dirname, '../../ai_service/seed/department_lookup_seed.json');
 
 async function seedDepartments() {
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGODB_URI;
   if (!mongoUri) {
-    console.error("Error: MONGO_URI is missing from environment variables.");
+    console.error("Error: MONGODB_URI is missing from environment variables.");
     process.exit(1);
   }
 

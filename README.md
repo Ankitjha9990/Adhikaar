@@ -44,7 +44,10 @@ cp .env.example .env
 Configure `ai_service/.env`:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-INTERNAL_SECRET=adhikaar_internal_secret_key_2026
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_API_KEY_RTI=your_rti_groq_api_key_here
+GROQ_API_KEY_RIGHTS=your_rights_groq_api_key_here
+INTERNAL_SECRET=<same-long-random-value-as-server>
 ```
 
 Start the Python service:
@@ -77,14 +80,19 @@ cp .env.example .env
 Configure `server/.env`:
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/adhikaar?retryWrites=true&w=majority
-PYTHON_SERVICE_URL=http://localhost:8000
-INTERNAL_SECRET=adhikaar_internal_secret_key_2026
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/adhikaar?retryWrites=true&w=majority
+PYTHON_SERVICE_URL=https://your-ai-service.example.com
+CORS_ORIGINS=https://your-frontend.vercel.app
+INTERNAL_SECRET=<same-long-random-value-as-ai-service>
+JWT_SECRET=<generate-a-different-long-random-value>
 ```
 
 In production, set `PYTHON_SERVICE_URL` to the deployed Python service URL, for example
 `https://adhikaar-hcqe.onrender.com` (without a trailing slash). The `INTERNAL_SECRET`
-value must be identical in both the Express and Python services.
+value must be identical in both the Express and Python services. Set `CORS_ORIGINS` to
+the deployed frontend origin; multiple origins may be comma-separated. For local
+development, set it to the Vite origin and set `PYTHON_SERVICE_URL` to the local AI
+service URL in your untracked `.env` file.
 
 Seed MongoDB with Department Lookup Data (run once):
 ```bash
@@ -106,7 +114,7 @@ npm install
 npm run dev
 ```
 
-The frontend will run on `http://localhost:5173` (or port configured in Vite) and proxy API requests to `http://localhost:5000/api`.
+The frontend uses the Vite development origin and the backend API origin configured in `VITE_API_URL`.
 
 For a deployed frontend, set `VITE_API_URL` to the deployed Express backend URL (not the
 Python AI service URL), for example `https://your-express-service.onrender.com`.

@@ -4,12 +4,18 @@ const DepartmentLookup = require('../models/DepartmentLookup');
 
 const router = express.Router();
 
-const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'adhikaar_internal_secret_key_2026';
+const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL;
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET;
 
 router.post('/generate', async (req, res, next) => {
   try {
     const { query, applicant, region } = req.body;
+    console.log(query);
+    console.log(applicant);
+    console.log(region);
+    
+    
+    
 
     if (!query || typeof query !== 'string' || !query.trim()) {
       return res.status(400).json({ error: 'RTI query text is required.' });

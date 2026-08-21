@@ -11,10 +11,21 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
+const MONGODB_URI = process.env.MONGODB_URI;
+const corsOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
+}));
 app.use(express.json());
 
 // Routes
@@ -34,18 +45,18 @@ app.use(errorHandler);
 
 // Start HTTP server immediately — do NOT wait for MongoDB
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Express Backend] Server running on http://localhost:${PORT}`);
+  console.log(`[Express Backend] Server listening on port ${PORT}`);
 });
 
 // Attempt MongoDB connection in the background (non-blocking)
 async function connectMongo() {
-  if (!MONGO_URI) {
-    console.warn('[MongoDB] MONGO_URI is not set — skipping database connection. AI & Auth routes will operate in resilient mode.');
+  if (!MONGODB_URI) {
+    console.warn('[MongoDB] MONGODB_URI is not set — skipping database connection. AI & Auth routes will operate in resilient mode.');
     return;
   }
 
   try {
-    const conn = await mongoose.connect(MONGO_URI, {
+    const conn = await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
       tls: true,
       tlsAllowInvalidCertificates: true,

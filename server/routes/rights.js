@@ -3,8 +3,8 @@ const axios = require('axios');
 
 const router = express.Router();
 
-const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'adhikaar_internal_secret_key_2026';
+const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL;
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET;
 
 router.post('/analyze', async (req, res, next) => {
   try {

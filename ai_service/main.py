@@ -12,13 +12,15 @@ import pdf_generator
 
 load_dotenv()
 
-INTERNAL_SECRET = os.environ.get("INTERNAL_SECRET", "adhikaar_internal_secret_key_2026")
+INTERNAL_SECRET = os.environ.get("INTERNAL_SECRET")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ai_service")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not INTERNAL_SECRET:
+        raise RuntimeError("INTERNAL_SECRET environment variable is required")
     logger.info("Initializing RAG vector store at startup...")
     rag.init_rag()
     yield
