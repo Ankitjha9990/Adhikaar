@@ -52,7 +52,7 @@ INTERNAL_SECRET=<same-long-random-value-as-server>
 
 Start the Python service:
 ```bash
-uvicorn main:app --port 8000 --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 For Render, configure the Python service as a web service with:
