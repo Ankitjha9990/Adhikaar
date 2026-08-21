@@ -26,6 +26,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Adhikaar AI Microservice", lifespan=lifespan)
 
+@app.head("/", include_in_schema=False)
+@app.head("/health", include_in_schema=False)
 @app.get("/", include_in_schema=False)
 @app.get("/health", include_in_schema=False)
 async def health_check():
