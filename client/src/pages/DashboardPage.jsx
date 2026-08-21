@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiUrl, readApiResponse } from '../api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DisclaimerBanner from '../components/DisclaimerBanner';
@@ -222,7 +223,7 @@ function DashboardPage() {
     setNameLoading(true);
     setNameMsg('');
     try {
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch(apiUrl('/api/auth/me'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -230,8 +231,7 @@ function DashboardPage() {
         },
         body: JSON.stringify({ name: newName.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to update name');
+      const data = await readApiResponse(res, 'Failed to update name.');
       await refreshUser();
       setNameMsg('Name updated successfully!');
       setEditingName(false);

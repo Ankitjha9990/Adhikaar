@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { apiUrl } from '../api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import CitationBadge from '../components/CitationBadge';
@@ -113,7 +114,7 @@ function RightsNavigatorPage() {
     setResult(null);
 
     try {
-      const response = await axios.post('/api/rights/analyze', {
+      const response = await axios.post(apiUrl('/api/rights/analyze'), {
         query: query.trim(),
         category: category || null,
       });

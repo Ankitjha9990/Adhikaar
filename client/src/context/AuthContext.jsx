@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { apiUrl, readApiResponse } from '../api';
 
 const AuthContext = createContext(null);
 
@@ -36,11 +37,11 @@ export function AuthProvider({ children }) {
 
       // Then verify the token with the server in the background
       try {
-        const res = await fetch('/api/auth/me', {
+        const res = await fetch(apiUrl('/api/auth/me'), {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
         if (res.ok) {
-          const data = await res.json();
+          const data = await readApiResponse(res, 'Could not verify your session.');
           setUser(data.user);
           localStorage.setItem(USER_KEY, JSON.stringify(data.user));
         } else {
@@ -71,26 +72,24 @@ export function AuthProvider({ children }) {
 
   /** Calls POST /api/auth/login */
   async function login(email, password) {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed.');
+    const data = await readApiResponse(res, 'Login failed.');
     _persist(data.user, data.token);
     return data.user;
   }
 
   /** Calls POST /api/auth/register */
   async function register(name, email, password) {
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch(apiUrl('/api/auth/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Registration failed.');
+    const data = await readApiResponse(res, 'Registration failed.');
     _persist(data.user, data.token);
     return data.user;
   }
@@ -107,11 +106,11 @@ export function AuthProvider({ children }) {
     const t = localStorage.getItem(TOKEN_KEY);
     if (!t) return;
     try {
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch(apiUrl('/api/auth/me'), {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await readApiResponse(res, 'Could not refresh your profile.');
         setUser(data.user);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       }

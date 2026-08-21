@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { apiUrl } from '../api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import CitationBadge from '../components/CitationBadge';
@@ -116,7 +117,7 @@ function RTIDraftingPage() {
     setResult(null);
 
     try {
-      const response = await axios.post('/api/rti/generate', {
+      const response = await axios.post(apiUrl('/api/rti/generate'), {
         query: query.trim(),
         applicant: {
           name: applicant.name.trim(),
