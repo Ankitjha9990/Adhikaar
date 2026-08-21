@@ -52,6 +52,14 @@ Start the Python service:
 uvicorn main:app --port 8000 --reload
 ```
 
+For Render, configure the Python service as a web service with:
+```text
+Root Directory: ai_service
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+Health Check Path: /health
+```
+
 ---
 
 ### 2. Express Backend Setup (`server/`)
@@ -74,6 +82,10 @@ PYTHON_SERVICE_URL=http://localhost:8000
 INTERNAL_SECRET=adhikaar_internal_secret_key_2026
 ```
 
+In production, set `PYTHON_SERVICE_URL` to the deployed Python service URL, for example
+`https://adhikaar-hcqe.onrender.com` (without a trailing slash). The `INTERNAL_SECRET`
+value must be identical in both the Express and Python services.
+
 Seed MongoDB with Department Lookup Data (run once):
 ```bash
 node seed/seedDepartments.js
@@ -95,6 +107,9 @@ npm run dev
 ```
 
 The frontend will run on `http://localhost:5173` (or port configured in Vite) and proxy API requests to `http://localhost:5000/api`.
+
+For a deployed frontend, set `VITE_API_URL` to the deployed Express backend URL (not the
+Python AI service URL), for example `https://your-express-service.onrender.com`.
 
 ---
 
