@@ -3,7 +3,7 @@ PRODUCT REQUIREMENTS DOCUMENT (PRD)
 AI for Civic and Legal Empowerment — OOSC 4.0 Hackathon Prototype
 ================================================================================
 
-Document owner : [Your Name / Team Name]
+Document owner : Team AuraSense
 Hackathon      : OOSC 4.0 Hackathon, IIIT Allahabad
 Track          : Problem Statement 3 — AI for Civic and Legal Empowerment
 Submission     : Phase 1 - Online Prototype (Deadline: 23 Aug 2026, 4:00 PM IST)

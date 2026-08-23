@@ -4,7 +4,7 @@ AI for Civic and Legal Empowerment — OOSC 4.0 Hackathon Prototype
 Features: RTI Drafting Agent + Rights Navigator
 ================================================================================
 
-Document owner : [Your Name / Team Name]
+Document owner : Team AuraSense
 Companion doc  : PRD_Civic_Legal_Empowerment_Prototype.txt
 Version        : 1.0
 Status         : Draft for build
